@@ -75,17 +75,20 @@ st.write("This demo shows how to use [ChainFury](https://nimbleboxai.github.io/C
 
 @st.cache_resource
 def Chat():
-  return []
+  return {}
 
 @st.cache_resource
 def ChatMode():
   return [False]
 
-chat = Chat()
+# chat = Chat()
 chat_modes = ChatMode()
 
 prompt = st.chat_input("Ask it question on Blitzscaling")
 if prompt:
+  usr_msg = st.chat_message("user")
+  usr_msg.write(prompt)
+
   with st.status("🦋 effect", expanded = True) as status:
     # if chat_modes[-1]:
     #   messages = [OpenAIChat.Message(role = "system", content = 'You are a helpful assistant trying to answer users question')]
@@ -103,19 +106,24 @@ if prompt:
       st.error(err)
     else:
       response, data_points = result
-      chat.append((prompt, response, data_points))
+      # chat.append((prompt, response, data_points))
       status.update(label="Chain complete!", state="complete", expanded=False)
 
-  # iterate over the chat
-  for prompt, response, data_points in chat:
-    # write the users message
-    msg = st.chat_message("user")
-    msg.write(prompt)
-    
-    # write the systems message
-    msg = st.chat_message("assistant")
-    msg.write(response)
+  ast_msg = st.chat_message("assistant")
+  ast_msg.write(response)
+  with st.expander("Citations"):
+    st.write(data_points)
 
-    # write the citations for the chat
-    with st.expander("Citations"):
-      st.write(data_points)
+  # # iterate over the chat
+  # for prompt, response, data_points in chat:
+  #   # write the users message
+  #   msg = st.chat_message("user")
+  #   msg.write(prompt)
+    
+  #   # write the systems message
+  #   msg = st.chat_message("assistant")
+  #   msg.write(response)
+
+  #   # write the citations for the chat
+  #   with st.expander("Citations"):
+  #     st.write(data_points)
