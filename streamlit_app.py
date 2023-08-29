@@ -83,20 +83,26 @@ prompt = st.chat_input("Ask it question on Blitzscaling")
 if prompt:
   # st.write(f"User has sent the following prompt: {prompt}")
   with st.status("Running chain ...", expanded = True) as status:
-    (response, data_points), _ = blitzscaling_chat_fn(prompt)
-    chat.append((prompt, response, data_points))
-    status.update(label="Chain complete!", state="complete", expanded=False)
+    result, err = blitzscaling_chat_fn(prompt)
+    if err:
+      status.update(label="Error!", state="error", expanded=True)
+      st.error(err)
 
-  # iterate over the chat
-  for prompt, response, data_points in chat[::-1]:
-    # write the users message
-    msg = st.chat_message("user")
-    msg.write(prompt)
-    
-    # write the systems message
-    msg = st.chat_message("assistant")
-    msg.write(response)
+    else:
+      response, data_points = result
+      chat.append((prompt, response, data_points))
+      status.update(label="Chain complete!", state="complete", expanded=False)
 
-    # write the citations for the chat
-    with st.expander("Citations"):
-      st.write(data_points)
+    # iterate over the chat
+    for prompt, response, data_points in chat[::-1]:
+      # write the users message
+      msg = st.chat_message("user")
+      msg.write(prompt)
+      
+      # write the systems message
+      msg = st.chat_message("assistant")
+      msg.write(response)
+
+      # write the citations for the chat
+      with st.expander("Citations"):
+        st.write(data_points)
