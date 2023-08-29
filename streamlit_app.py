@@ -70,39 +70,52 @@ User has asked the following question:
 
 # ------ script ------ #
 
-st.title("Blitzscaling Demo")
-st.write("This demo shows how to use ChainFury to build a simple chatbot that can answer questions about blitzscaling.")
+st.title("Blitzscaling Q/A")
+st.write("This demo shows how to use [ChainFury](https://nimbleboxai.github.io/ChainFury/index.html) to build a simple chatbot that can answer questions about blitzscaling.")
 
 @st.cache_resource
 def Chat():
   return []
 
+@st.cache_resource
+def ChatMode():
+  return [False]
+
 chat = Chat()
+chat_modes = ChatMode()
 
 prompt = st.chat_input("Ask it question on Blitzscaling")
 if prompt:
-  # st.write(f"User has sent the following prompt: {prompt}")
-  with st.status("Running chain ...", expanded = True) as status:
+  with st.status("🦋 effect", expanded = True) as status:
+    # if chat_modes[-1]:
+    #   messages = [OpenAIChat.Message(role = "system", content = 'You are a helpful assistant trying to answer users question')]
+    #   for i, (prompt, response, data_points) in enumerate(chat):
+    #     messages.append(OpenAIChat.Message(role = "user", content = prompt))
+    #     messages.append(OpenAIChat.Message(role = "assistant", content = response))
+    #   out = openai_chat(model = "gpt-3.5-turbo", messages = messages)
+    #   response = out["choices"][0]["message"]["content"]
+    #   result = (response, "This was in chat mode.")
+    # else:
+
     result, err = blitzscaling_chat_fn(prompt)
     if err:
       status.update(label="Error!", state="error", expanded=True)
       st.error(err)
-
     else:
       response, data_points = result
       chat.append((prompt, response, data_points))
       status.update(label="Chain complete!", state="complete", expanded=False)
 
-    # iterate over the chat
-    for prompt, response, data_points in chat[::-1]:
-      # write the users message
-      msg = st.chat_message("user")
-      msg.write(prompt)
-      
-      # write the systems message
-      msg = st.chat_message("assistant")
-      msg.write(response)
+  # iterate over the chat
+  for prompt, response, data_points in chat:
+    # write the users message
+    msg = st.chat_message("user")
+    msg.write(prompt)
+    
+    # write the systems message
+    msg = st.chat_message("assistant")
+    msg.write(response)
 
-      # write the citations for the chat
-      with st.expander("Citations"):
-        st.write(data_points)
+    # write the citations for the chat
+    with st.expander("Citations"):
+      st.write(data_points)
