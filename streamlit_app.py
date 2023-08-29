@@ -1,0 +1,102 @@
+import streamlit as st
+from time import time
+
+from chainfury import memory_registry
+from chainfury.components.openai import openai_chat, OpenAIChat
+
+COLLECTION_NAME = "blitzscaling"
+
+def blitzscaling_chat_fn(
+  question: str,
+  model: str = "gpt-3.5-turbo"
+):
+  # load the data points from the memory
+  _st = time()
+  st.write("Loading data points")
+  mem  = memory_registry.get_read("qdrant")
+  out, err = mem({
+    "items": [question],
+    "embedding_model": "openai-embedding",
+    "limit": 1,
+    "collection_name": COLLECTION_NAME
+  })
+  if err:
+    return None, err
+
+  # create a string with all the data points
+  data_points = [x["payload"] for x in out["items"]["data"]]
+  data_points_text = [x["text"] for x in data_points]
+  dp_text = ""
+  for i, text in enumerate(data_points_text):
+      dp_text += f"<id>[{i}]</id>\n\n{text}"
+      dp_text += "\n------\n"
+  st.write(f"Loaded data points in {time() - _st:.2f} seconds")
+
+  _st = time()
+  st.write("Calling LLM")
+  out = openai_chat(
+    model = model,
+    messages=[
+      OpenAIChat.Message(
+        role = "system", 
+        content = '''
+You are a helpful assistant that is helping user summarize the information with citations.
+
+Tag all the citations with tags around it like:
+
+```
+this is some text [<id>2</id>, <id>14</id>]
+```'''),
+      OpenAIChat.Message(
+        role = "user",
+        content = f'''
+Data points collection:
+
+{dp_text}
+
+---
+
+User has asked the following question:
+
+{question}
+''')]
+  )
+
+  response = out["choices"][0]["message"]["content"]
+  st.write(f"Called LLM in {time() - _st:.2f} seconds")
+
+  return (response, data_points), None
+
+
+# ------ script ------ #
+
+st.title("Blitzscaling Demo")
+st.write("This demo shows how to use ChainFury to build a simple chatbot that can answer questions about blitzscaling.")
+
+@st.cache_resource
+def Chat():
+  return []
+
+chat = Chat()
+
+prompt = st.chat_input("Ask it question on Blitzscaling")
+if prompt:
+  # st.write(f"User has sent the following prompt: {prompt}")
+  with st.status("Running chain ...", expanded = True) as status:
+    (response, data_points), _ = blitzscaling_chat_fn(prompt)
+    chat.append((prompt, response, data_points))
+    status.update(label="Chain complete!", state="complete", expanded=False)
+
+  # iterate over the chat
+  for prompt, response, data_points in chat[::-1]:
+    # write the users message
+    msg = st.chat_message("user")
+    msg.write(prompt)
+    
+    # write the systems message
+    msg = st.chat_message("assistant")
+    msg.write(response)
+
+    # write the citations for the chat
+    with st.expander("Citations"):
+      st.write(data_points)
