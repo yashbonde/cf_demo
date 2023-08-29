@@ -1,1 +1,2 @@
-chainfury[qdrant]==1.4.2
+chainfury==1.4.2
+qdrant-client==1.1.1
