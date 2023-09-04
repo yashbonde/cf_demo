@@ -1,3 +1,7 @@
+import os
+
+USE_OPENAI = os.getenv("USE_OPENAI", "false").lower() in ("true", "1")
+
 import streamlit as st
 from time import time
 
@@ -71,7 +75,9 @@ User has asked the following question:
 # ------ script ------ #
 
 st.title("Blitzscaling Q/A")
-st.write("This demo shows how to use [ChainFury](https://nimbleboxai.github.io/ChainFury/index.html) to build a simple chatbot that can answer questions about blitzscaling.")
+st.write('''This demo shows how to use [ChainFury](https://nimbleboxai.github.io/ChainFury/index.html)
+         to build a simple chatbot that can answer questions about blitzscaling. [Code](https://github.com/yashbonde/cf_demo)
+''')
 
 @st.cache_resource
 def Chat():
@@ -82,7 +88,7 @@ def ChatMode():
   return [False]
 
 # chat = Chat()
-chat_modes = ChatMode()
+# chat_modes = ChatMode()
 
 prompt = st.chat_input("Ask it question on Blitzscaling")
 if prompt:
