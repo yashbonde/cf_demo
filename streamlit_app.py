@@ -7,13 +7,20 @@ from time import time
 
 from chainfury import memory_registry
 from chainfury.components.openai import openai_chat, OpenAIChat
+from chainfury.components.tune import chatnbx, ChatNBX
 
 COLLECTION_NAME = "blitzscaling"
 
 def blitzscaling_chat_fn(
   question: str,
-  model: str = "gpt-3.5-turbo"
+  model: str = ""
 ):
+  
+  if USE_OPENAI:
+    model = model or "gpt-3.5-turbo"
+  else:
+    model = model or "llama-2-chat-70b-4k"
+
   # load the data points from the memory
   _st = time()
   st.write("Loading data points")
@@ -37,23 +44,19 @@ def blitzscaling_chat_fn(
   st.write(f"Loaded data points in {time() - _st:.2f} seconds")
 
   _st = time()
-  st.write("Calling LLM")
-  out = openai_chat(
-    model = model,
-    messages=[
-      OpenAIChat.Message(
-        role = "system", 
-        content = '''
+  messages=[{
+        "role" : "system", 
+        "content" : '''
 You are a helpful assistant that is helping user summarize the information with citations.
 
 Tag all the citations with tags around it like:
 
 ```
 this is some text [<id>2</id>, <id>14</id>]
-```'''),
-      OpenAIChat.Message(
-        role = "user",
-        content = f'''
+```'''},
+      {
+        "role": "user",
+        "content": f'''
 Data points collection:
 
 {dp_text}
@@ -63,8 +66,16 @@ Data points collection:
 User has asked the following question:
 
 {question}
-''')]
-  )
+'''}]
+
+  if USE_OPENAI:
+    st.write("Calling LLM")
+    messages = [OpenAIChat.Message(**x) for x in messages]
+    out = openai_chat(model = model, messages = messages)
+  else:
+    st.write("Calling [ChatNBX](https://chat.nbox.ai)")
+    messages = [ChatNBX.Message(**x) for x in messages]
+    out = chatnbx(model = model, messages = messages)
 
   response = out["choices"][0]["message"]["content"]
   st.write(f"Called LLM in {time() - _st:.2f} seconds")
@@ -75,8 +86,10 @@ User has asked the following question:
 # ------ script ------ #
 
 st.title("Blitzscaling Q/A")
-st.write('''This demo shows how to use [ChainFury](https://nimbleboxai.github.io/ChainFury/index.html)
-         to build a simple chatbot that can answer questions about blitzscaling. [Code](https://github.com/yashbonde/cf_demo)
+st.write(f'''This demo shows how to use [ChainFury](https://nimbleboxai.github.io/ChainFury/index.html)
+to build a simple chatbot that can answer questions about blitzscaling. [Code](https://github.com/yashbonde/cf_demo).
+This demo uses
+{"[OpenAI](https://openai.com)" if USE_OPENAI else "[ChatNBX](https://chat.nbox.ai)"} as the model.
 ''')
 
 @st.cache_resource

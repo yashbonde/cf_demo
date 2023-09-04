@@ -5,9 +5,15 @@ Welcome to the ChainFury Retrieval Augmented Generation (RAG) demo! 🎉
 - 🔗 [Click here to try the demo](https://blitzscaling.streamlit.app/)
 - 📚 [Access the Blitzscaling PDF](https://drive.google.com/file/d/1QeWwfxEcYyAXkLexCgUX4AWr6nnO3Aqk/view?usp=sharing)
 
+## Environment Setup
+
 Before we begin, make sure to set the following environment variables:
 
-- 🔸 `OPENAI_TOKEN` - Your OpenAI Token ("sk-xxxxx")
+For LLM you can use one of the two
+- 🔸 `CHATNBX_KEY` - Your ChatNBX Token ("tune-xxxxx"), see more at [ChatNBX](https://chat.nbox.ai/)
+- 🔸 `OPENAI_TOKEN` - Your OpenAI Token ("sk-xxxxx") also set `USE_OPENAI=1`
+
+For vector database we use qdrant:
 - 🔸 `QDRANT_API_KEY` - Your QDRANT API Key ("hbl-xxxxxx")
 - 🔸 `QDRANT_API_URL` - The URL for the QDRANT API ("https://xxx")
 
