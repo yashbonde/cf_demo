@@ -1,6 +1,6 @@
 import os
 
-USE_OPENAI = os.getenv("USE_OPENAI", "false").lower() in ("true", "1")
+# USE_OPENAI = os.getenv("USE_OPENAI", "false").lower() in ("true", "1")
 
 import streamlit as st
 from time import time
@@ -86,10 +86,11 @@ User has asked the following question:
 # ------ script ------ #
 
 st.title("Blitzscaling Q/A")
+USE_OPENAI = st.toggle("Use OpenAI's `gpt-3.5-turbo`", value=False)
 st.write(f'''This demo shows how to use [ChainFury](https://nimbleboxai.github.io/ChainFury/index.html)
 to build a simple chatbot that can answer questions about blitzscaling. [Code](https://github.com/yashbonde/cf_demo).
 This demo uses
-{"[OpenAI](https://openai.com)" if USE_OPENAI else "[ChatNBX](https://chat.nbox.ai)"} as the model.
+{"[OpenAI](https://openai.com)" if USE_OPENAI else "Llama-2 (13b) [ChatNBX](https://chat.nbox.ai)"} as the model.
 ''')
 
 @st.cache_resource
