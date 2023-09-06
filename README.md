@@ -24,7 +24,7 @@ To load the data on qdrant, follow these steps:
 1. Install the necessary requirements by running the following command:
 
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements_dev.txt
    python3 load_data.py --help
    ```
 
@@ -32,7 +32,12 @@ To load the data on qdrant, follow these steps:
 
 To run the streamlit app, follow these steps:
 
-1. Run the streamlit app using the following command:
+1. Install the required dependencies (ignore this step if you already have the dev requirements installed) by running:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Run the streamlit app using the following command:
    ```bash
    streamlit run streamlit_app.py
    ```

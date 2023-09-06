@@ -6,12 +6,23 @@ import streamlit as st
 from time import time
 
 from chainfury.components.qdrant import qdrant_read
-from chainfury.components.openai import openai_chat, OpenAIChat
+from chainfury.components.openai import openai_chat, OpenAIChat, openai_embedding
 from chainfury.components.tune import chatnbx, ChatNBX
 
-from load_data import get_embedding
 
 COLLECTION_NAME = "blitzscaling"
+
+def get_embedding(item):
+  all_strings = [item["text"]]
+
+  try:
+    out = openai_embedding("text-embedding-ada-002", all_strings)
+  except Exception as e:
+    return None, item
+
+  # create a payload
+  _arr = [x["embedding"] for x in out["data"]]
+  return _arr, None
 
 def blitzscaling_chat_fn(
   question: str,
@@ -25,7 +36,7 @@ def blitzscaling_chat_fn(
   if err:
     return None, err
   out, err = qdrant_read(
-    embeddings = embedding.tolist(),
+    embeddings = embedding,
     collection_name = COLLECTION_NAME,
     top = 3,
   )
