@@ -5,9 +5,11 @@ import os
 import streamlit as st
 from time import time
 
-from chainfury import memory_registry
+from chainfury.components.qdrant import qdrant_read
 from chainfury.components.openai import openai_chat, OpenAIChat
 from chainfury.components.tune import chatnbx, ChatNBX
+
+from load_data import get_embedding
 
 COLLECTION_NAME = "blitzscaling"
 
@@ -15,27 +17,23 @@ def blitzscaling_chat_fn(
   question: str,
   model: str = ""
 ):
-  
-  if USE_OPENAI:
-    model = model or "gpt-3.5-turbo"
-  else:
-    model = model or "llama-2-chat-70b-4k"
 
   # load the data points from the memory
   _st = time()
   st.write("Loading data points")
-  mem  = memory_registry.get_read("qdrant")
-  out, err = mem({
-    "items": [question],
-    "embedding_model": "openai-embedding",
-    "limit": 1,
-    "collection_name": COLLECTION_NAME
-  })
+  embedding, err = get_embedding({"text": question})
+  if err:
+    return None, err
+  out, err = qdrant_read(
+    embeddings = embedding.tolist(),
+    collection_name = COLLECTION_NAME,
+    top = 3,
+  )
   if err:
     return None, err
 
   # create a string with all the data points
-  data_points = [x["payload"] for x in out["items"]["data"]]
+  data_points = [x["payload"] for x in out["data"]]
   data_points_text = [x["text"] for x in data_points]
   dp_text = ""
   for i, text in enumerate(data_points_text):
@@ -77,8 +75,13 @@ User has asked the following question:
     messages = [ChatNBX.Message(**x) for x in messages]
     out = chatnbx(model = model, messages = messages)
 
-  response = out["choices"][0]["message"]["content"]
-  st.write(f"Called LLM in {time() - _st:.2f} seconds")
+  try:
+    response = out["choices"][0]["message"]["content"]
+    st.write(f"Called LLM in {time() - _st:.2f} seconds")
+  except:
+    st.error(out)
+    st.write(f"Called LLM in {time() - _st:.2f} seconds")
+    return None, out
 
   return (response, data_points), None
 
@@ -87,10 +90,17 @@ User has asked the following question:
 
 st.title("Blitzscaling Q/A")
 USE_OPENAI = st.toggle("Use OpenAI's `gpt-3.5-turbo`", value=False)
+
+if USE_OPENAI:
+  model = "gpt-3.5-turbo"
+else:
+  model = "llama-2-chat-70b-4k"
 st.write(f'''This demo shows how to use [ChainFury](https://nimbleboxai.github.io/ChainFury/index.html)
 to build a simple chatbot that can answer questions about blitzscaling. [Code](https://github.com/yashbonde/cf_demo).
 This demo uses
-{"[OpenAI](https://openai.com)" if USE_OPENAI else "Llama-2 (13b) [ChatNBX](https://chat.nbox.ai)"} as the model.
+{"[OpenAI](https://openai.com)" if USE_OPENAI else "[ChatNBX](https://chat.nbox.ai)"}'s `{model}` as the model.
+
+- 📚 [Access the Blitzscaling PDF](https://drive.google.com/file/d/1QeWwfxEcYyAXkLexCgUX4AWr6nnO3Aqk/view?usp=sharing)
 ''')
 
 @st.cache_resource
@@ -110,17 +120,7 @@ if prompt:
   usr_msg.write(prompt)
 
   with st.status("🦋 effect", expanded = True) as status:
-    # if chat_modes[-1]:
-    #   messages = [OpenAIChat.Message(role = "system", content = 'You are a helpful assistant trying to answer users question')]
-    #   for i, (prompt, response, data_points) in enumerate(chat):
-    #     messages.append(OpenAIChat.Message(role = "user", content = prompt))
-    #     messages.append(OpenAIChat.Message(role = "assistant", content = response))
-    #   out = openai_chat(model = "gpt-3.5-turbo", messages = messages)
-    #   response = out["choices"][0]["message"]["content"]
-    #   result = (response, "This was in chat mode.")
-    # else:
-
-    result, err = blitzscaling_chat_fn(prompt)
+    result, err = blitzscaling_chat_fn(prompt, model)
     if err:
       status.update(label="Error!", state="error", expanded=True)
       st.error(err)
@@ -133,17 +133,3 @@ if prompt:
   ast_msg.write(response)
   with st.expander("Citations"):
     st.write(data_points)
-
-  # # iterate over the chat
-  # for prompt, response, data_points in chat:
-  #   # write the users message
-  #   msg = st.chat_message("user")
-  #   msg.write(prompt)
-    
-  #   # write the systems message
-  #   msg = st.chat_message("assistant")
-  #   msg.write(response)
-
-  #   # write the citations for the chat
-  #   with st.expander("Citations"):
-  #     st.write(data_points)
